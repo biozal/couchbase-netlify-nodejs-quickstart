@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "couchbase": "^4.2.2",
+    "dotenv": "^16.0.3"
+  }
+}

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Couchbase with Netlify</title>
+  </head>
+  <body>
+    <h1>Couchbase with Netlify Functions</h1>
+    <div class="section">
+      <h2>
+        Update <code>country</code> for Airline:
+        <span class="highlight">40 Mile Air</span>
+      </h2>
+      <form onsubmit="handleCountrySubmit(event)">
+        <input
+          type="text"
+          id="newCountry"
+          placeholder="New Country for 40-Mile-Air"
+          size="50"
+        />
+        <button type="submit">Submit</button>
+      </form>
+    </div>
+    <div class="section">
+      <h2>List of Airlines</h2>
+      <ul id="airlines"></ul>
+    </div>
+  </body>
+</html>
+
+<script>
+  async function handleCountrySubmit(e) {
+    e.preventDefault()
+
+    let country = e.target[0].value
+    await fetch('/.netlify/functions/put_airline', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ country: country }),
+    })
+
+    location.reload() // not great, but we don't have any UI state management
+  }
+
+  ;(async () => {
+    try {
+      let results = await fetch('/.netlify/functions/get_airlines')
+      let parsedResults = await results.json()
+
+      // TODO: simplify the list here -> lets try a flexbox grid maybe?
+      parsedResults.rows.forEach((result) => {
+        const listItem = document.createElement('li')
+        listItem.innerText = result.airline.name
+        const subList = document.createElement('ul')
+        const subListItem = document.createElement('li')
+        const codeBlock = document.createElement('pre')
+        codeBlock.innerText = JSON.stringify(result.airline, null, 2)
+        subListItem.appendChild(codeBlock)
+        subList.appendChild(subListItem)
+        listItem.appendChild(subList)
+        document.getElementById('airlines').appendChild(listItem)
+      })
+    } catch (error) {
+      const listError = document.createElement('li')
+      const errorMsg = document.createElement('strong')
+      errorMsg.innerText = error.message
+      listError.innerText = `Error Fetching Airlines: `
+      listError.appendChild(errorMsg)
+      document.getElementById('airlines').appendChild(listError)
+    }
+  })()
+</script>
+
+<style>
+  body {
+    font-family: Arial, serif;
+  }
+  #airlines > li > ul {
+    list-style: none !important;
+  }
+  pre {
+    background: lightgray;
+    display: inline-block;
+    padding: 16px;
+    border-radius: 6px;
+  }
+  .highlight {
+    background: yellow;
+    padding: 6px 12px;
+    border-radius: 6px;
+  }
+  .section {
+    border: 2px solid darkgray;
+    border-radius: 6px;
+    margin: 24px 0;
+    padding: 0 0 20px 20px;
+    width: 90%;
+  }
+  form > input,
+  button {
+    padding: 10px 16px;
+  }
+  button {
+    cursor: pointer;
+  }
+</style>
